@@ -1,0 +1,42 @@
+name: Daily Price Scraper (Cloud)
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Chạy lúc 09h00 GTM+7 hàng ngày
+  workflow_dispatch: # Cho phép bấm chạy thủ công để test
+
+jobs:
+  scrape_matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Nếu 1 đại lý lỗi, các đại lý khác vẫn chạy tiếp
+      matrix:
+        # LIỆT KÊ DANH SÁCH CÁC ĐẠI LÝ CỦA BẠN Ở ĐÂY
+        dealer_config: [
+          "configs/CPS.json",
+          #"configs/fpt.json",
+          #"configs/cellphoneS.json",
+          #"configs/hoangha.json"
+          # ... Thêm đủ 20 file config vào đây
+        ]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Create Service Account File
+        # Tạo lại file json từ Secret
+        run: echo '${{ secrets.GDRIVE_CREDS }}' > service_account.json
+
+      - name: Run Scraper for ${{ matrix.dealer_config }}
+        # Chạy script cho từng đại lý trong danh sách matrix
+        run: python main.py ${{ matrix.dealer_config }}
